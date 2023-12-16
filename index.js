@@ -14,21 +14,23 @@ const io = require('socket.io')(http);
 
 let sockets = 0
 
-const players = {}
+let foods = []
 
 io.on('connection', (socket) => {
     sockets+=1
-    const players = []
-    const player = {
+    let players = []
+    let player = {
         ws: socket.id,
         x: 0,
         y: 0,
         speed: 0.01
     }
-    players.push({ws: socket.id, x: player.x, y: player.y, speed: player.speed})
-    console.log(players);
+    let redFood = {
+        x: 0,
+        y: 0
+    }
+    players.push(player)
     io.emit('connectionRequest', player.ws)
-    console.log(socket.id);
     socket.on('updatePlayerData', (data) => {
         player.x = data.x;
         player.y = data.y;
@@ -40,10 +42,23 @@ io.on('connection', (socket) => {
             hashDSDSH: sockets
         };
         io.sockets.emit('getData', dataToSend);
-        console.log(players);
     });
     socket.on('disconnect', () => {
         sockets-=1
-        console.log(sockets);
+        io.sockets.emit('disconnection', player.ws);
     })
+    function update() {
+        if (foods.length < 10) {
+            const newFood = {
+                x: Math.floor(Math.random() * 900),
+                y: Math.floor(Math.random() * 600)
+            };
+            foods.push(newFood);
+        }
+        io.sockets.emit('spawnRedFood', foods);
+    }    
+    setInterval(() => {
+        update()
+    }, 1000)
 })
+
